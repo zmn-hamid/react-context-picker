@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "React Context Picker",
+  "version": "1.0.0",
+  "description": "Select an element and copy useful context for a coding assistant.",
+  "permissions": ["activeTab", "scripting"],
+  "action": { "default_title": "Select an element" },
+  "background": { "service_worker": "background.js" }
+}
