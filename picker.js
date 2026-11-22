@@ -126,15 +126,13 @@
     function showReport(el) {
       selecting = false; outline.hidden = true;
       heading.textContent = 'Element context';
-      message.textContent = 'Review the report before copying. React details are best-effort.';
-      const field = doc.createElement('textarea'); field.value = reportFor(el, win.location.href); field.setAttribute('aria-label', 'Report to copy');
-      const copy = doc.createElement('button'); copy.textContent = 'Copy';
-      const status = doc.createElement('p'); status.setAttribute('role', 'status');
-      copy.addEventListener('click', async () => {
-        status.textContent = await copyText(field.value, doc, win.navigator.clipboard) ? 'Copied.' : 'Copy failed. Select the report and copy it manually.';
+      message.textContent = 'React details are best-effort. Review the report before sharing.';
+      const field = doc.createElement('textarea'); field.value = reportFor(el, win.location.href); field.setAttribute('aria-label', 'Report'); field.setAttribute('readonly', '');
+      const status = doc.createElement('p'); status.setAttribute('role', 'status'); status.textContent = 'Copying…';
+      close.textContent = 'Close'; panel.replaceChildren(heading, message, field, close, status);
+      copyText(field.value, doc, win.navigator.clipboard).then(copied => {
+        status.textContent = copied ? 'Copied to clipboard.' : 'Copy failed. Select the report and copy it manually.';
       });
-      close.textContent = 'Close'; panel.replaceChildren(heading, message, field, copy, close, status);
-      field.focus();
     }
     close.addEventListener('click', cleanup);
     doc.addEventListener('pointermove', move, true);
