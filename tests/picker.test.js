@@ -23,18 +23,20 @@ function setup() {
   const doc = { documentElement: new Element('html'), body: new Element('body'), createElement: tag => new Element(tag),
     addEventListener: (type, fn) => { listeners[type] = fn; }, removeEventListener: type => { delete listeners[type]; } };
   doc.documentElement.append(doc.body);
-  const win = { location: { href: 'http://localhost:3000/path?secret=x' }, navigator: {} };
+  const timers = new Map();
+  const win = { location: { href: 'http://localhost:3000/path?secret=x' }, navigator: {},
+    setTimeout: (fn, delay) => { timers.set(1, { fn, delay }); return 1; }, clearTimeout: id => timers.delete(id) };
   start(doc, win);
   const host = doc.documentElement.children.at(-1);
   function event(type, target, extra = {}) {
     const e = { type, target, composedPath: () => [target], preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }, ...extra };
     listeners[type]?.(e); return e;
   }
-  return { doc, win, host, listeners, event };
+  return { doc, win, host, listeners, event, timers };
 }
 
 test('hover highlights, click suppresses action and automatically copies the report', async () => {
-  const { doc, host, event, win } = setup();
+  const { doc, host, event, win, timers, listeners } = setup();
   let copied;
   win.navigator.clipboard = { writeText: async text => { copied = text; } };
   const button = new Element('button'); button.childNodes.push({ nodeType: 3, nodeValue: 'Save' }); doc.body.append(button);
@@ -44,12 +46,14 @@ test('hover highlights, click suppresses action and automatically copies the rep
   const click = event('click', button);
   assert.equal(click.prevented, true); assert.equal(click.stopped, true);
   const panel = host.shadow.children[2];
-  assert.equal(panel.children[0].textContent, 'Element context');
-  assert.match(panel.children[2].value, /Visible text: Save/);
-  assert.equal(panel.children[3].textContent, 'Close');
-  assert.equal(copied, panel.children[2].value);
+  assert.equal(panel.children.length, 1);
+  assert.match(copied, /Visible text: Save/);
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(panel.children[4].textContent, 'Copied to clipboard.');
+  assert.equal(panel.children[0].textContent, 'Copied to clipboard.');
+  assert.equal(timers.get(1).delay, 2000);
+  timers.get(1).fn();
+  assert.equal(host.removed, true);
+  assert.equal(listeners.click, undefined);
 });
 
 test('automatic copy failure offers manual copy', async () => {
@@ -58,11 +62,16 @@ test('automatic copy failure offers manual copy', async () => {
   const element = new Element('div'); doc.body.append(element);
   event('click', element);
   await new Promise(resolve => setImmediate(resolve));
-  assert.match(host.shadow.children[2].children[4].textContent, /copy it manually/i);
+  const panel = host.shadow.children[2];
+  assert.match(panel.children[1].textContent, /copy it manually/i);
+  assert.match(panel.children[2].value, /DOM selector:/);
+  event('keydown', element, { key: 'Escape' });
+  assert.equal(host.removed, true);
 });
 
 test('Escape cancels and removes listeners', () => {
   const { host, listeners, event, win } = setup();
+  assert.equal(host.shadow.children[2].children.length, 2);
   assert.equal(event('keydown', host, { key: 'Escape' }).prevented, true);
   assert.equal(host.removed, true); assert.equal(listeners.click, undefined);
   assert.equal(win.__reactContextPicker__, undefined);

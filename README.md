@@ -10,7 +10,7 @@ A local-only Chrome extension for reviewing and copying context about an element
 
 ## Use
 
-Click the extension icon, hover to highlight an element, and click to select it. The picker blocks the selection click and automatically copies the report to your clipboard; press **Escape** or **Cancel** to stop. If copying fails, select the displayed report and copy it manually. Click the icon again to close an active picker.
+Click the extension icon, hover to highlight an element, and click to select it. The picker blocks the selection click and automatically copies the report to your clipboard, then briefly confirms the copy and closes. Press **Escape** to cancel. If copying fails, select the displayed report and copy it manually, then press **Escape** to close it. Click the icon again to close an active picker.
 
 The report includes a query-free URL, DOM selector, element type, classes, visible text excerpt, and any React component names and source hints exposed by the page. Input, textarea, select and editable content values are not read. React metadata is best-effort and can be absent, especially in production builds or newer React versions; unavailable information is labeled rather than inferred. Selectors and source hints may change between builds. Review the report for sensitive page content before sharing it.
 
@@ -18,4 +18,4 @@ The extension uses `activeTab` and `scripting` only; it injects on explicit icon
 
 ## Tests
 
-Run `node --test tests/*.test.js` with a recent Node.js installation. For a browser smoke test, load the extension, select an element on a local React page, check the report and paste the clipboard contents, then repeat and cancel with Escape.
+Run `node --test tests/*.test.js` with a recent Node.js installation. For a browser smoke test, load the extension, select an element on a local React page, check that the confirmation disappears and paste the clipboard contents, then repeat and cancel with Escape.

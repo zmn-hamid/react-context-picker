@@ -98,9 +98,8 @@
     const panel = doc.createElement('section'); panel.className = 'panel'; panel.setAttribute('aria-label', 'React Context Picker');
     const heading = doc.createElement('h2'); heading.textContent = 'Select an element';
     const message = doc.createElement('p'); message.textContent = 'Hover to highlight, click to select, or press Escape to cancel.';
-    const close = doc.createElement('button'); close.textContent = 'Cancel';
-    panel.append(heading, message, close); shadow.append(style, outline, panel); doc.documentElement.appendChild(host);
-    let selecting = true;
+    panel.append(heading, message); shadow.append(style, outline, panel); doc.documentElement.appendChild(host);
+    let selecting = true, closed = false, timer;
     const eventTypes = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
     function inside(event) { return event.composedPath().includes(host); }
     function move(event) {
@@ -118,6 +117,8 @@
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); cleanup(); }
     }
     function cleanup() {
+      closed = true;
+      if (timer) win.clearTimeout(timer);
       doc.removeEventListener('pointermove', move, true);
       for (const type of eventTypes) doc.removeEventListener(type, intercept, true);
       doc.removeEventListener('keydown', keydown, true);
@@ -125,16 +126,24 @@
     }
     function showReport(el) {
       selecting = false; outline.hidden = true;
-      heading.textContent = 'Element context';
-      message.textContent = 'React details are best-effort. Review the report before sharing.';
-      const field = doc.createElement('textarea'); field.value = reportFor(el, win.location.href); field.setAttribute('aria-label', 'Report'); field.setAttribute('readonly', '');
-      const status = doc.createElement('p'); status.setAttribute('role', 'status'); status.textContent = 'Copying…';
-      close.textContent = 'Close'; panel.replaceChildren(heading, message, field, close, status);
-      copyText(field.value, doc, win.navigator.clipboard).then(copied => {
-        status.textContent = copied ? 'Copied to clipboard.' : 'Copy failed. Select the report and copy it manually.';
+      const report = reportFor(el, win.location.href);
+      heading.textContent = 'Copying…';
+      panel.replaceChildren(heading);
+      copyText(report, doc, win.navigator.clipboard).then(copied => {
+        if (closed) return;
+        if (copied) {
+          heading.textContent = 'Copied to clipboard.';
+          panel.setAttribute('role', 'status');
+          timer = win.setTimeout(cleanup, 2000);
+        } else {
+          heading.textContent = 'Copy failed';
+          message.textContent = 'Select the report and copy it manually. Press Escape to close.';
+          const field = doc.createElement('textarea'); field.value = report; field.setAttribute('aria-label', 'Report'); field.setAttribute('readonly', '');
+          panel.replaceChildren(heading, message, field);
+          field.focus();
+        }
       });
     }
-    close.addEventListener('click', cleanup);
     doc.addEventListener('pointermove', move, true);
     for (const type of eventTypes) doc.addEventListener(type, intercept, true);
     doc.addEventListener('keydown', keydown, true);
