@@ -71,7 +71,10 @@
   function contentToCopy(el, href) {
     try {
       const source = el.getAttribute('data-design-source');
-      if (typeof source === 'string' && source.trim()) return source;
+      if (typeof source === 'string' && source.trim()) {
+        const id = el.getAttribute('id');
+        return source + (typeof id === 'string' && id.trim() ? ' | ID: ' + id : '') + ' | Element type: ' + el.localName;
+      }
     } catch (_) { /* fall back to the standard report */ }
     try { return reportFor(el, href); }
     catch (_) { return '<failed to find the component>'; }

@@ -87,8 +87,10 @@ test('clipboard fallback is used when API fails', async () => {
 
 test('data-design-source is copied alone, with report and placeholder fallbacks', () => {
   const el = new Element('button');
+  el.getAttribute = name => name === 'data-design-source' ? 'src/components/Button.tsx' : name === 'id' ? 'save-button' : null;
+  assert.equal(contentToCopy(el, 'http://localhost/'), 'src/components/Button.tsx | ID: save-button | Element type: button');
   el.getAttribute = name => name === 'data-design-source' ? 'src/components/Button.tsx' : null;
-  assert.equal(contentToCopy(el, 'http://localhost/'), 'src/components/Button.tsx');
+  assert.equal(contentToCopy(el, 'http://localhost/'), 'src/components/Button.tsx | Element type: button');
 
   el.getAttribute = () => null;
   assert.match(contentToCopy(el, 'http://localhost/'), /DOM selector:/);
