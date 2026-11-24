@@ -68,6 +68,15 @@
     ].join('\n');
   }
 
+  function contentToCopy(el, href) {
+    try {
+      const source = el.getAttribute('data-design-source');
+      if (typeof source === 'string' && source.trim()) return source;
+    } catch (_) { /* fall back to the standard report */ }
+    try { return reportFor(el, href); }
+    catch (_) { return '<failed to find the component>'; }
+  }
+
   async function copyText(text, doc, clipboard) {
     try {
       if (!clipboard || !clipboard.writeText) throw new Error('Clipboard API unavailable');
@@ -126,7 +135,7 @@
     }
     function showReport(el) {
       selecting = false; outline.hidden = true;
-      const report = reportFor(el, win.location.href);
+      const report = contentToCopy(el, win.location.href);
       heading.textContent = 'Copying…';
       panel.replaceChildren(heading);
       copyText(report, doc, win.navigator.clipboard).then(copied => {
@@ -150,6 +159,6 @@
     win[KEY] = cleanup;
   }
 
-  if (typeof module !== 'undefined' && module.exports) module.exports = { selectorFor, visibleText, reactInfo, reportFor, copyText, start };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { selectorFor, visibleText, reactInfo, reportFor, contentToCopy, copyText, start };
   else start(document, window);
 })();

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { start, copyText, reportFor } = require('../picker.js');
+const { start, copyText, reportFor, contentToCopy } = require('../picker.js');
 global.CSS = { escape: x => x };
 global.getComputedStyle = () => ({ display: 'block', visibility: 'visible' });
 
@@ -83,6 +83,16 @@ test('clipboard fallback is used when API fails', async () => {
   assert.equal(doc.body.children[0].value, 'report'); assert.equal(doc.body.children[0].removed, true);
   doc.execCommand = () => false;
   assert.equal(await copyText('report', doc, null), false);
+});
+
+test('data-design-source is copied alone, with report and placeholder fallbacks', () => {
+  const el = new Element('button');
+  el.getAttribute = name => name === 'data-design-source' ? 'src/components/Button.tsx' : null;
+  assert.equal(contentToCopy(el, 'http://localhost/'), 'src/components/Button.tsx');
+
+  el.getAttribute = () => null;
+  assert.match(contentToCopy(el, 'http://localhost/'), /DOM selector:/);
+  assert.equal(contentToCopy(el, 'not a URL'), '<failed to find the component>');
 });
 
 test('missing React metadata is explicit, URL query and input values omitted', () => {
